@@ -121,7 +121,7 @@ class ProductManager {
     }
 }
 
-const manager = new ProductManager('productosasync.json');
+const manager = new ProductManager('productosasyncconaddreutilizado.json');
 
 (async () => {
     await manager.addProduct({
