@@ -14,21 +14,21 @@
     "id": 2
   },
   {
-    "title": "Producto 3",
-    "description": "Descripción del producto 3",
-    "price": 20,
-    "thumbnail": "thumbnail3.jpg",
-    "code": "GHI789",
-    "stock": 25,
-    "id": 4
-  },
-  {
     "title": "Producto 2",
     "description": "Descripción del producto 2",
     "price": 15,
     "thumbnail": "thumbnail2.jpg",
     "code": "DEF456",
     "stock": 15,
+    "id": 4
+  },
+  {
+    "title": "Producto 3",
+    "description": "Descripción del producto 3",
+    "price": 20,
+    "thumbnail": "thumbnail3.jpg",
+    "code": "GHI789",
+    "stock": 25,
     "id": 5
   }
 ]

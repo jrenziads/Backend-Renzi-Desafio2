@@ -1,49 +1,36 @@
-const fs = require('fs');
+const fs = require('fs').promises;
 
 class ProductManager {
     constructor(path) {
         this.path = path;
         this.products = [];
         this.productIdCounter = 1;
-        this.initialize();
+        this.loadProducts();
     }
 
-    initialize() {
-        if (!fs.existsSync(this.path)) {
-           
-            fs.writeFileSync(this.path, '[]');
-        } else {
-           
-            this.loadProducts();
+    async loadProducts() {
+        try {
+            const data = await fs.readFile(this.path, 'utf8');
+            this.products = JSON.parse(data);
+            if (this.products.length > 0) {
+                this.productIdCounter = Math.max(...this.products.map(product => product.id)) + 1;
+            }
+        } catch (err) {
+            console.error("Error al cargar los productos:", err);
         }
     }
 
-    loadProducts() {
-        fs.readFile(this.path, 'utf8', (err, data) => {
-            if (err) {
-                console.error("Error al cargar los productos:", err);
-                return;
-            }
-            try {
-                this.products = JSON.parse(data);
-                if (this.products.length > 0) {
-                    this.productIdCounter = Math.max(...this.products.map(product => product.id)) + 1;
-                }
-            } catch (parseErr) {
-                console.error("Error al analizar los datos de productos:", parseErr);
-            }
-        });
+    async saveProducts() {
+        try {
+            await fs.writeFile(this.path, JSON.stringify(this.products, null, 2));
+            console.log("Productos guardados correctamente.");
+        } catch (err) {
+            console.error("Error al guardar los productos:", err);
+        }
     }
 
-    saveProducts() {
-        fs.writeFile(this.path, JSON.stringify(this.products, null, 2), (err) => {
-            if (err) {
-                console.error("Error al guardar los productos:", err);
-            }
-        });
-    }
-
-    addProduct(product) {
+    async addProduct(product) {
+        await this.loadProducts();
         if (!product.title || !product.description || !product.price || !product.thumbnail || !product.code || !product.stock) {
             console.error("Todos los campos son obligatorios.");
             return;
@@ -56,7 +43,7 @@ class ProductManager {
 
         product.id = this.productIdCounter++;
         this.products.push(product);
-        this.saveProducts();
+        await this.saveProducts(); 
     }
 
     getProducts() {
@@ -69,7 +56,6 @@ class ProductManager {
             return product;
         } else {
             console.error("Producto no encontrado.");
-            return null;
         }
     }
 
@@ -96,4 +82,43 @@ class ProductManager {
     }
 }
 
-const manager = new ProductManager('./productosasync.json');
+const manager = new ProductManager('productosasync.json');
+
+(async () => {
+    await manager.addProduct({
+        title: "Producto 1",
+        description: "Descripción del producto 1",
+        price: 10,
+        thumbnail: "thumbnail1.jpg",
+        code: "ABC123",
+        stock: 20
+    });
+
+    await manager.addProduct({
+        title: "Producto 2",
+        description: "Descripción del producto 2",
+        price: 15,
+        thumbnail: "thumbnail2.jpg",
+        code: "DEF456",
+        stock: 15
+    });
+
+    await manager.addProduct({
+        title: "Producto 3",
+        description: "Descripción del producto 3",
+        price: 20,
+        thumbnail: "thumbnail3.jpg",
+        code: "GHI789",
+        stock: 25
+    });
+
+    console.log(manager.getProducts());
+    console.log(manager.getProductById(2));
+    console.log(manager.getProductById(4));
+
+    manager.updateProduct(2, { title: "Nuevo Producto 2", price: 25 });
+    console.log(manager.getProducts());
+
+    manager.deleteProduct(3);
+    console.log(manager.getProducts());
+})();
