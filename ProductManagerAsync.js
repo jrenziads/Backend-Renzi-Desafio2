@@ -41,21 +41,19 @@ class ProductManager {
 
     async addProduct(product) {
         try {
-            const arrayProducts = await this.getProducts();
+            await this.loadProducts();
 
             if (!product.title || !product.description || !product.price || !product.thumbnail || !product.code || !product.stock) {
                 return console.error("Todos los campos son obligatorios.");
             }
 
-            if (arrayProducts.some(existingProduct => existingProduct.code === product.code)) {
+            if (this.products.some(existingProduct => existingProduct.code === product.code)) {
                 return console.error("Ya existe un producto con el mismo código.");
             }
 
-            product.id = arrayProducts.length ? arrayProducts[arrayProducts.length - 1].id + 1 : 1;
-            arrayProducts.push(product);
-
-            await fs.promises.writeFile(this.path, JSON.stringify(arrayProducts, null, 2));
-            
+            product.id = this.productIdCounter++;
+            this.products.push(product);
+            await this.saveProducts();
             console.log('Producto agregado satisfactoriamente');
         } catch (error) {
             console.error(error);
@@ -63,10 +61,12 @@ class ProductManager {
     }
 
     async getProducts() {
+        await this.loadProducts();
         return this.products;
     }
 
     async getProductById(id) {
+        await this.loadProducts();
         const product = this.products.find(product => product.id === id);
         if (product) {
             return product;
@@ -76,6 +76,7 @@ class ProductManager {
     }
 
     async updateProduct(id, updatedProduct) {
+        await this.loadProducts();
         const index = this.products.findIndex(product => product.id === id);
         if (index !== -1) {
             this.products[index] = { ...updatedProduct, id };
@@ -87,6 +88,7 @@ class ProductManager {
     }
 
     async deleteProduct(id) {
+        await this.loadProducts();
         const index = this.products.findIndex(product => product.id === id);
         if (index !== -1) {
             this.products.splice(index, 1);
@@ -98,43 +100,41 @@ class ProductManager {
     }
 }
 
-const manager = new ProductManager('productosasync.json');
+async function runTests() {
+    const manager = new ProductManager('productosasync.json');
 
-(async () => {
-    await manager.addProduct({
-        title: "Producto 1",
-        description: "Descripción del producto 1",
-        price: 10,
-        thumbnail: "thumbnail1.jpg",
-        code: "ABC123",
-        stock: 20
-    });
+    console.log('Productos al inicio:', await manager.getProducts());
 
     await manager.addProduct({
-        title: "Producto 2",
-        description: "Descripción del producto 2",
-        price: 15,
-        thumbnail: "thumbnail2.jpg",
-        code: "DEF456",
-        stock: 15
-    });
-
-    await manager.addProduct({
-        title: "Producto 3",
-        description: "Descripción del producto 3",
-        price: 20,
-        thumbnail: "thumbnail3.jpg",
-        code: "GHI789",
+        title: "producto prueba",
+        description: "Este es un producto prueba",
+        price: 200,
+        thumbnail: "Sin imagen",
+        code: "abc123",
         stock: 25
     });
 
-    console.log(await manager.getProducts());
-    console.log(await manager.getProductById(2));
-    console.log(await manager.getProductById(4));
+    console.log('Productos después de agregar:', await manager.getProducts());
 
-    await manager.updateProduct(2, { title: "Nuevo Producto 2", price: 25 });
-    console.log(await manager.getProducts());
+    console.log('Producto encontrado por ID:', await manager.getProductById(1));
 
-    await manager.deleteProduct(3);
-    console.log(await manager.getProducts());
-})();
+    await manager.updateProduct(1, { title: "Nuevo título", price: 250 });
+    console.log('Producto actualizado:', await manager.getProductById(1));
+
+    await manager.deleteProduct(1);
+    console.log('Productos después de eliminar:', await manager.getProducts());
+    for (let i = 1; i <= 7; i++) {
+        await manager.addProduct({
+            title: `Producto ${i}`,
+            description: `Descripción del producto ${i}`,
+            price: i * 10,
+            thumbnail: `thumbnail${i}.jpg`,
+            code: `CODE${i}`,
+            stock: i * 5
+        });
+    }
+    console.log('Productos agregados:', await manager.getProducts());
+}
+
+
+runTests();
